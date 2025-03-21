@@ -11,8 +11,13 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application
-COPY . .
+# Copy the application code and data
+COPY src/ ./src/
+COPY data/ ./data/
+
+# Set environment variables
+ENV PYTHONPATH=/app
+ENV PORT=8080
 
 # Expose the port the app runs on
 EXPOSE 8080
