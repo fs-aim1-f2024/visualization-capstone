@@ -51,9 +51,10 @@ class AppState:
         self.filtered_data = self.data.copy()
         
         for column, value in filters.items():
+            print(f"Applying filter to {column} with value {value}")
             if value:
                 if isinstance(value, list):
-                    self.filtered_data = self.filtered_data[self.filtered_data[column].isin(value)]
+                    self.filtered_data = self.filtered_data[self.filtered_data[column].isin(list(map(lambda x: x['value'], value)))]
                 else:
                     self.filtered_data = self.filtered_data[self.filtered_data[column] == value]
         
@@ -82,58 +83,14 @@ def dashboard():
         else:
             ui.notify('Sample data file not found', type='negative')
     
-    def load_uploaded_data(event):
-        """Handle uploaded CSV file"""
-        temp_path = Path(event.name)
-        with open(temp_path, 'wb') as f:
-            f.write(event.content.read())
-        
-        success = app_state.load_data(temp_path)
-        if success:
-            ui.notify('Data loaded successfully!', type='positive')
-            setup_filters()  # Setup filters after loading data
-            update_dashboard()
-        else:
-            ui.notify('Failed to load data', type='negative')
-        
-        # Clean up temporary file
-        os.remove(temp_path)
-    
     def update_dashboard():
         """Update all charts with current data"""
         if app_state.data is not None:
             # Update charts
-            with chart1_container:
-                chart1_container.clear()
-                create_chart1(app_state)
-            
-            with chart2_container:
-                chart2_container.clear()
-                create_chart2(app_state)
-                
-            with chart3_container:
-                chart3_container.clear()
-                create_chart3(app_state)
-                
-            with chart4_container:
-                chart4_container.clear()
-                create_chart4(app_state)
-                
-            with chart5_container:
-                chart5_container.clear()
-                create_chart5(app_state)
-                
-            with chart6_container:
-                chart6_container.clear()
-                create_chart6(app_state)
-                
-            with chart7_container:
-                chart7_container.clear()
-                create_chart7(app_state)
-                
-            with chart8_container:
-                chart8_container.clear()
-                create_chart8(app_state)
+            for i, chart_container in enumerate(chart_containers):
+                with chart_container:
+                    chart_container.clear()
+                    chart_functions[i](app_state)
     
     def apply_filter(column, value):
         """Apply filter and update charts"""
@@ -155,62 +112,108 @@ def dashboard():
         filter_container.clear()
         
         with filter_container:
-            with ui.row():
-                # Create filters for categorical columns (example)
-                categorical_columns = app_state.data.select_dtypes(include=['object']).columns.tolist()[:3]  # Limit to first 3 categorical columns
-                
+            with ui.row().classes('flex-wrap gap-4 p-4 bg-gray-100 rounded-lg'):
+                # Categorical filters
+                categorical_columns = app_state.data.select_dtypes(include=['object']).columns.tolist()[:3]
                 for column in categorical_columns:
                     values = app_state.data[column].unique().tolist()
-                    if len(values) < 10:  # Only create dropdowns for columns with reasonable number of values
-                        with ui.card().classes('p-2'):
-                            ui.label(f'Filter by {column}')
-                            dropdown = ui.select(options=values, label=column, with_input=True, multiple=True)
-                            dropdown.on('update:model-value', lambda e, col=column: apply_filter(col, e.value))
-    
-    # Replace grid with tabs
-    with ui.tabs().classes('w-full') as tabs:
-        tab_preprocessing = ui.tab('Data Preprocessing')
-        tab1 = ui.tab(charts[0].name)
-        tab2 = ui.tab(charts[1].name)
-        tab3 = ui.tab(charts[2].name)
-        tab4 = ui.tab(charts[3].name)
-        tab5 = ui.tab(charts[4].name)
-        tab6 = ui.tab(charts[5].name)
-        tab7 = ui.tab(charts[6].name)
-        tab8 = ui.tab(charts[7].name)
-    
-    with ui.tab_panels(tabs, value=tab_preprocessing).classes('w-full'):
-        with ui.tab_panel(tab_preprocessing):
-            with ui.card().classes('w-full p-4'):
-                ui.label('Data Loading and Preprocessing').classes('text-h6 mb-4')
-                with ui.row():
-                    ui.button('Load Sample Data', on_click=lambda: load_sample_data())
-                    file_picker = ui.upload(on_upload=lambda e: load_uploaded_data(e))
+                    if len(values) < 10:
+                        ui.label(f'{column}').classes('text-sm font-medium')
+                        dropdown = ui.select(options=values, label=column, with_input=True, multiple=True).classes('w-48')
+                        dropdown.on('update:model-value', lambda e, col=column: apply_filter(col, e.args))
                 
-                with ui.card().classes('w-full mt-4'):
-                    ui.label('Data Filters').classes('text-h6 mb-2')
-                    filter_container = ui.element('div').classes('w-full')
-                    filter_container.clear()
-                    
-                    # Add a button to reset filters
-                    ui.button('Reset Filters', on_click=reset_filters).classes('mt-2')
+                # Released Year filter
+                year_values = sorted(app_state.data['released_year'].unique().tolist())
+                year_select = ui.select(
+                    options=[{i:i} for i in year_values],
+                    label='Year',
+                    with_input=True,
+                    multiple=True
+                ).classes('w-48')
+                year_select.on('update:model-value', lambda e: apply_filter('released_year', e.args))
+                
+                # Artist Count filter')
+                artist_count_values = sorted(app_state.data['artist_count'].unique().tolist())
+                artist_count_select = ui.select(
+                    options=[{i:i} for i in artist_count_values],
+                    label='Artist Count',
+                    with_input=True,
+                    multiple=True
+                ).classes('w-48')
+                artist_count_select.on('update:model-value', lambda e: apply_filter('artist_count', e.args))
+                
+                # Released Month filter
+                month_select = ui.select(
+                    options=[{i:f'Month {i}'} for i in range(1, 13)],
+                    label='Month',
+                    with_input=True,
+                    multiple=True
+                ).classes('w-48')
+                month_select.on('update:model-value', lambda e: apply_filter('released_month', e.args))
+                
+                # Released Day filter
+                day_values = sorted(app_state.data['released_day'].unique().tolist())
+                day_select = ui.select(
+                    options=[{i:i} for i in day_values],
+                    label='Day',
+                    with_input=True,
+                    multiple=True
+                ).classes('w-48')
+                day_select.on('update:model-value', lambda e: apply_filter('released_day', e.args))
+                
+                # Mode filter
+                mode_select = ui.select(
+                    options=[{0: 'Minor'}, {1: 'Major'}],
+                    label='Mode',
+                    with_input=True,
+                    multiple=True
+                ).classes('w-48')
+                mode_select.on('update:model-value', lambda e: apply_filter('mode', e.args))
+    
+    def show_chart_dialog(chart_index):
+        """Show a dialog with the full-size chart"""
+        with ui.dialog() as dialog, ui.card().classes('w-[90vw] h-[90vh]'):
+            with ui.row().classes('w-full justify-between items-center mb-4'):
+                ui.label(charts[chart_index].name).classes('text-h6')
+                ui.button(icon='close', on_click=dialog.close).classes('bg-red-500 text-white hover:bg-red-600')
+            with ui.element('div').classes('w-full h-[calc(90vh-4rem)]'):
+                chart_functions[chart_index](app_state)
+        dialog.open()
+
+    # Create a list of chart functions
+    chart_functions = [create_chart1, create_chart2, create_chart3, create_chart4, 
+                      create_chart5, create_chart6, create_chart7, create_chart8]
+    
+    # Create the main layout
+    with ui.column().classes('w-full p-4'):
+            # ui.label('Data Loading and Preprocessing').classes('text-h6 mb-4')
+            # with ui.row():
+            #     ui.button('Load Sample Data', on_click=lambda: load_sample_data())
+        with ui.card().classes('w-full mt-4'):
+            ui.label('Data Filters').classes('text-h6 mb-2')
+            filter_container = ui.element('div').classes('w-full')
+            filter_container.clear()
+            ui.button('Reset Filters', on_click=reset_filters).classes('mt-2')
         
-        with ui.tab_panel(tab1):
-            chart1_container = ui.card().classes('w-full p-4')
-        with ui.tab_panel(tab2):
-            chart2_container = ui.card().classes('w-full p-4')
-        with ui.tab_panel(tab3):
-            chart3_container = ui.card().classes('w-full p-4')
-        with ui.tab_panel(tab4):
-            chart4_container = ui.card().classes('w-full p-4')
-        with ui.tab_panel(tab5):
-            chart5_container = ui.card().classes('w-full p-4')
-        with ui.tab_panel(tab6):
-            chart6_container = ui.card().classes('w-full p-4')
-        with ui.tab_panel(tab7):
-            chart7_container = ui.card().classes('w-full p-4')
-        with ui.tab_panel(tab8):
-            chart8_container = ui.card().classes('w-full p-4')
+        # Create a grid of charts
+        chart_containers = []
+        with ui.grid().classes('w-full gap-4 grid-cols-2'):
+            for i in range(len(charts)):
+                with ui.card().classes('w-full cursor-pointer hover:shadow-lg transition-shadow relative') as container:
+                    # Add fullscreen button in top right
+                    with ui.button(icon='fullscreen', on_click=lambda e, idx=i: show_chart_dialog(idx)).classes('absolute top-2 right-2 z-10 bg-white rounded-full shadow-md hover:bg-gray-100'):
+                        ui.tooltip('Open in fullscreen')
+                    
+                    container.on('click', lambda e, idx=i: show_chart_dialog(idx))
+                    ui.label(charts[i].name).classes('text-h6 mb-2')
+                    chart_containers.append(container)
+                    # Initial empty state
+                    ui.label('Click to load chart').classes('text-grey-6')
+
+  
+    # Load data automatically when page starts
+    load_sample_data()
+
 
 # Run the app
 ui.run(title='Spotify Data Dashboard')
