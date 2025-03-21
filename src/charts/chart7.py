@@ -2,7 +2,7 @@ from nicegui import ui
 
 def create_chart7(app_state):
     """Distribution of streams by musical key with statistical analysis"""
-    ui.label('Distribution of Streams by Key').classes('text-h6')
+    ui.label('Distribution of Streams by Key').classes('text-h6 hidden')
     
     
     if app_state.filtered_data is None or app_state.filtered_data.empty:

@@ -2,7 +2,7 @@ from nicegui import ui
 
 def create_chart8(app_state):
     """Scatter plot of danceability vs valence with cluster analysis"""
-    ui.label('Danceability vs. Valence Analysis').classes('text-h6')
+    ui.label('Danceability vs. Valence Analysis').classes('text-h6 hidden')
     
     if app_state.filtered_data is None or app_state.filtered_data.empty:
         ui.label('No data available')

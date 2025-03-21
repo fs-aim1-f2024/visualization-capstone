@@ -2,7 +2,7 @@ from nicegui import ui
 
 def create_chart4(app_state):
     """Streams Trend Over Time"""
-    ui.label('Streams Trend Over Time').classes('text-h6')
+    ui.label('Streams Trend Over Time').classes('text-h6 hidden')
     
     if app_state.filtered_data is None or app_state.filtered_data.empty:
         ui.label('No data available')

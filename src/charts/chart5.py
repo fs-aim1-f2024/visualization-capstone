@@ -2,7 +2,7 @@ from nicegui import ui
 
 def create_chart5(app_state):
     """Correlation Matrix Heatmap"""
-    ui.label('Correlation Matrix Heatmap').classes('text-h6')
+    ui.label('Correlation Matrix Heatmap').classes('text-h6 hidden')
     
     if app_state.filtered_data is None or app_state.filtered_data.empty:
         ui.label('No data available')

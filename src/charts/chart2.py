@@ -2,7 +2,7 @@ from nicegui import ui
 
 def create_chart2(app_state):
     """Relationship between Released Year and Streams"""
-    ui.label('Relationship between Released Year and Streams').classes('text-h6')
+    ui.label('Relationship between Released Year and Streams').classes('text-h6 hidden')
     
     if app_state.filtered_data is None or app_state.filtered_data.empty:
         ui.label('No data available')

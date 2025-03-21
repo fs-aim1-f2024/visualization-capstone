@@ -18,14 +18,22 @@ from charts.chart8 import create_chart8
 Chart = namedtuple('Chart', ['name', 'requirements'])
 
 charts = [
-    Chart(name='Distribution of Released Year', requirements=['Use ML algorithms to analyse the distribution of released years for tracks on Spotify', 'Visualize the distribution using a histogram to show the frequency of tracks released in different years']),
-    Chart(name='Relationship between Released Year and Streams', requirements=['Perform predictive analysis to understand the relationship between the released year and the number of streams using ML regression techniques.', 'Develop a predictive model to estimate the number of streams based on the released year', 'Create a scatter plot visualization to depict the relationship between released year and streams']),
-    Chart(name='Distribution of Streams by Playlist Presence', requirements=['Aggregate streams by the presence of tracks in Spotify playlists (in_spotify_playlists) using ML techniques', 'Visualize the distribution using a stacked bar chart, where each bar represents playlist presence and the stacked segments represent the proportion of streams from each category']),
-    Chart(name='Streams Trend Over Time', requirements=['Analyse the trend of streams over time using ML time series analysis techniques','Visualize the trend using a line chart, where the x-axis represents time (e.g., months or years) and the y-axis represents the number of streams']),
-    Chart(name='Correlation Matrix Heatmap', requirements=['Generate a correlation matrix using ML techniques to explore the relationships between different variables (released year, streams, BPM, danceability, valence, energy, etc.)', 'Visualize the correlation matrix using a heatmap, where each cell represents the correlation coefficient between two variables']),
-    Chart(name='Distribution of Streams by Artist Count ', requirements=['Aggregate streams by the count of artists involved in each track (artist_count) using ML techniques','Visualize the distribution using a bar chart, where each bar represents the number of artists and the height represents the number of streams']),
-    Chart(name='Distribution of Streams by Key', requirements=['Aggregate streams by musical key (key) using ML techniques', 'Visualize the distribution using a pie chart, where each slice represents a key and the size represents the proportion of streams']),
-    Chart(name='Danceability vs. Valence Scatter Plot', requirements=['Analyse the relationship between danceability and valence using ML techniques', 'Create a scatter plot visualization to depict the relationship between danceability and valence, where each point represents a track']),
+    Chart(name='Distribution of Released Year', 
+          requirements=['Use ML algorithms to analyse the distribution of released years for tracks on Spotify', 'Visualize the distribution using a histogram to show the frequency of tracks released in different years']),
+    Chart(name='Relationship between Released Year and Streams', 
+          requirements=['Perform predictive analysis to understand the relationship between the released year and the number of streams using ML regression techniques.', 'Develop a predictive model to estimate the number of streams based on the released year', 'Create a scatter plot visualization to depict the relationship between released year and streams']),
+    Chart(name='Distribution of Streams by Playlist Presence', 
+          requirements=['Aggregate streams by the presence of tracks in Spotify playlists (in_spotify_playlists) using ML techniques', 'Visualize the distribution using a stacked bar chart, where each bar represents playlist presence and the stacked segments represent the proportion of streams from each category']),
+    Chart(name='Streams Trend Over Time', 
+          requirements=['Analyse the trend of streams over time using ML time series analysis techniques','Visualize the trend using a line chart, where the x-axis represents time (e.g., months or years) and the y-axis represents the number of streams']),
+    Chart(name='Correlation Matrix Heatmap', 
+          requirements=['Generate a correlation matrix using ML techniques to explore the relationships between different variables (released year, streams, BPM, danceability, valence, energy, etc.)', 'Visualize the correlation matrix using a heatmap, where each cell represents the correlation coefficient between two variables']),
+    Chart(name='Distribution of Streams by Artist Count ', 
+          requirements=['Aggregate streams by the count of artists involved in each track (artist_count) using ML techniques','Visualize the distribution using a bar chart, where each bar represents the number of artists and the height represents the number of streams']),
+    Chart(name='Distribution of Streams by Key', 
+          requirements=['Aggregate streams by musical key (key) using ML techniques', 'Visualize the distribution using a pie chart, where each slice represents a key and the size represents the proportion of streams']),
+    Chart(name='Danceability vs. Valence Scatter Plot', 
+          requirements=['Analyse the relationship between danceability and valence using ML techniques', 'Create a scatter plot visualization to depict the relationship between danceability and valence, where each point represents a track']),
 ]
 
 # Initialize app state
@@ -95,6 +103,14 @@ def dashboard():
             for i, chart_container in enumerate(chart_containers):
                 with chart_container:
                     chart_container.clear()
+                    # Add fullscreen button in top right
+                    with ui.row():
+                        ui.label(charts[i].name).classes('text-h6')
+                        with ui.button(icon='info', on_click=lambda e, idx=i: show_chart_info(idx)).classes('absolute top-2 right-12 z-10').props('flat'):
+                            ui.tooltip('Show requirements')
+                        with ui.button(icon='fullscreen', on_click=lambda e, idx=i: show_chart_dialog(idx)).classes('absolute top-2 right-2 z-10').props('flat'):
+                            ui.tooltip('Open in fullscreen')
+                    
                     chart_functions[i](app_state)
     
     def apply_filter(column, value):
@@ -176,12 +192,19 @@ def dashboard():
                     on_change=lambda e: apply_filter('mode', e.value)
                 ).classes('w-48')
     
+    def show_chart_info(chart_index):
+        """Show a dialog with the chart information"""
+        with ui.dialog() as dialog, ui.card():
+            ui.label(charts[chart_index].name).classes('text-h6')
+            ui.label(charts[chart_index].requirements).classes('text-sm')
+        dialog.open()
+    
     def show_chart_dialog(chart_index):
         """Show a dialog with the full-size chart"""
-        with ui.dialog() as dialog, ui.card().classes('w-[90vw] h-[90vh]'):
+        with ui.dialog().props('maximized') as dialog, ui.card():
             with ui.row().classes('w-full justify-between items-center mb-4'):
                 ui.label(charts[chart_index].name).classes('text-h6')
-                ui.button(icon='close', on_click=dialog.close).classes('bg-red-500 text-white hover:bg-red-600')
+                ui.button(icon='close', on_click=dialog.close).props('flat')
             with ui.element('div').classes('w-full h-[calc(90vh-4rem)]'):
                 chart_functions[chart_index](app_state)
         dialog.open()
@@ -191,14 +214,11 @@ def dashboard():
                       create_chart5, create_chart6, create_chart7, create_chart8]
     
     # Create the main layout
-    with ui.column().classes('w-full p-4'):
-            # ui.label('Data Loading and Preprocessing').classes('text-h6 mb-4')
-            # with ui.row():
-            #     ui.button('Load Sample Data', on_click=lambda: load_sample_data())
-        with ui.card().classes('w-full mt-4'):
+    with ui.column().classes('w-full p-1'):
+        with ui.card().classes('w-full mt-1'):
             with ui.row().classes('w-full justify-between items-center'):
                 ui.label('Data Filters').classes('text-h6')
-                ui.button(icon='refresh', on_click=reset_filters).classes('mt-2 text-sm p-2').props('size=sm flat')
+                ui.button(icon='refresh', on_click=reset_filters).classes('p-1').props('flat')
             filter_container = ui.element('div').classes('w-full')
             filter_container.clear()
             
@@ -208,15 +228,8 @@ def dashboard():
         with ui.grid().classes('w-full gap-4 grid-cols-2'):
             for i in range(len(charts)):
                 with ui.card().classes('w-full cursor-pointer hover:shadow-lg transition-shadow relative') as container:
-                    # Add fullscreen button in top right
-                    with ui.button(icon='fullscreen', on_click=lambda e, idx=i: show_chart_dialog(idx)).classes('absolute top-2 right-2 z-10 bg-white rounded-full shadow-md hover:bg-gray-100'):
-                        ui.tooltip('Open in fullscreen')
-                    
-                    container.on('click', lambda e, idx=i: show_chart_dialog(idx))
                     ui.label(charts[i].name).classes('text-h6 mb-2')
                     chart_containers.append(container)
-                    # Initial empty state
-                    ui.label('Click to load chart').classes('text-grey-6')
 
   
     # Load data automatically when page starts

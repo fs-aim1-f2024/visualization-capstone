@@ -7,7 +7,7 @@ from sklearn.neighbors import KernelDensity
 
 def create_chart1(app_state):
     """Histogram showing distribution of released years with KDE"""
-    ui.label('Distribution of Released Years').classes('text-h6')
+    ui.label('Distribution of Released Years').classes('text-h6 hidden')
     
     if app_state.filtered_data is None or app_state.filtered_data.empty:
         ui.label('No data available')
