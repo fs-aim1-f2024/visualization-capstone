@@ -54,7 +54,7 @@ class AppState:
             print(f"Applying filter to {column} with value {value}")
             if value:
                 if isinstance(value, list):
-                    self.filtered_data = self.filtered_data[self.filtered_data[column].isin(list(map(lambda x: x['value'], value)))]
+                    self.filtered_data = self.filtered_data[self.filtered_data[column].isin(value)]
                 else:
                     self.filtered_data = self.filtered_data[self.filtered_data[column] == value]
         
@@ -66,9 +66,14 @@ app_state = AppState()
 # Dashboard layout
 @ui.page('/')
 def dashboard():
-    with ui.header().classes('bg-blue-800 text-white'):
-        ui.label('Spotify Data Dashboard').classes('text-h4')
     
+    # Set the colors for the app with Spotify theme
+    ui.colors(primary="#1DB954", secondary="#191414", accent="#FFFFFF", positive="#1ED760", negative="#FF5722")
+    
+    with ui.header().classes('text-white'):
+        with ui.row():
+            ui.html('<svg xmlns="http://www.w3.org/2000/svg" height="40" viewBox="-33.4974 -55.829 290.3108 334.974"><path d="M177.707 98.987c-35.992-21.375-95.36-23.34-129.719-12.912-5.519 1.674-11.353-1.44-13.024-6.958-1.672-5.521 1.439-11.352 6.96-13.029 39.443-11.972 105.008-9.66 146.443 14.936 4.964 2.947 6.59 9.356 3.649 14.31-2.944 4.963-9.359 6.6-14.31 3.653m-1.178 31.658c-2.525 4.098-7.883 5.383-11.975 2.867-30.005-18.444-75.762-23.788-111.262-13.012-4.603 1.39-9.466-1.204-10.864-5.8a8.717 8.717 0 015.805-10.856c40.553-12.307 90.968-6.347 125.432 14.833 4.092 2.52 5.38 7.88 2.864 11.968m-13.663 30.404a6.954 6.954 0 01-9.569 2.316c-26.22-16.025-59.223-19.644-98.09-10.766a6.955 6.955 0 01-8.331-5.232 6.95 6.95 0 015.233-8.334c42.533-9.722 79.017-5.538 108.448 12.446a6.96 6.96 0 012.31 9.57M111.656 0C49.992 0 0 49.99 0 111.656c0 61.672 49.992 111.66 111.657 111.66 61.668 0 111.659-49.988 111.659-111.66C223.316 49.991 173.326 0 111.657 0" fill="#000000"/></svg>')
+            ui.label('Spotify Data Dashboard').classes('text-h4 text-dark')
     def load_sample_data():
         """Load sample data for demonstration"""
         sample_path = Path('data/spotify-2023.csv')
@@ -125,50 +130,51 @@ def dashboard():
                 # Released Year filter
                 year_values = sorted(app_state.data['released_year'].unique().tolist())
                 year_select = ui.select(
-                    options=[{i:i} for i in year_values],
+                    options=dict(zip(year_values, year_values)),
                     label='Year',
                     with_input=True,
-                    multiple=True
-                ).classes('w-48')
-                year_select.on('update:model-value', lambda e: apply_filter('released_year', e.args))
+                    multiple=True,
+                    on_change=lambda e: apply_filter('released_year', e.value)
+                ).classes('w-48') 
                 
                 # Artist Count filter')
                 artist_count_values = sorted(app_state.data['artist_count'].unique().tolist())
                 artist_count_select = ui.select(
-                    options=[{i:i} for i in artist_count_values],
+                    options=dict(zip(artist_count_values, artist_count_values)),
                     label='Artist Count',
                     with_input=True,
-                    multiple=True
+                    multiple=True,
+                    on_change=lambda e: apply_filter('artist_count', e.value)
                 ).classes('w-48')
-                artist_count_select.on('update:model-value', lambda e: apply_filter('artist_count', e.args))
                 
                 # Released Month filter
                 month_select = ui.select(
-                    options=[{i:f'Month {i}'} for i in range(1, 13)],
+                    options=dict(zip(range(1, 13), [f'Month {i}' for i in range(1, 13)])),
                     label='Month',
                     with_input=True,
-                    multiple=True
+                    multiple=True,
+                    on_change=lambda e: apply_filter('released_month', e.value)
                 ).classes('w-48')
-                month_select.on('update:model-value', lambda e: apply_filter('released_month', e.args))
                 
                 # Released Day filter
                 day_values = sorted(app_state.data['released_day'].unique().tolist())
                 day_select = ui.select(
-                    options=[{i:i} for i in day_values],
+                    options=dict(zip(day_values, day_values)),
                     label='Day',
                     with_input=True,
-                    multiple=True
+                    multiple=True,
+                    on_change=lambda e: apply_filter('released_day', e.value)
                 ).classes('w-48')
-                day_select.on('update:model-value', lambda e: apply_filter('released_day', e.args))
+                
                 
                 # Mode filter
                 mode_select = ui.select(
-                    options=[{0: 'Minor'}, {1: 'Major'}],
+                    options=dict(zip([0, 1], ['Minor', 'Major'])),
                     label='Mode',
                     with_input=True,
-                    multiple=True
+                    multiple=True,
+                    on_change=lambda e: apply_filter('mode', e.value)
                 ).classes('w-48')
-                mode_select.on('update:model-value', lambda e: apply_filter('mode', e.args))
     
     def show_chart_dialog(chart_index):
         """Show a dialog with the full-size chart"""
@@ -190,10 +196,12 @@ def dashboard():
             # with ui.row():
             #     ui.button('Load Sample Data', on_click=lambda: load_sample_data())
         with ui.card().classes('w-full mt-4'):
-            ui.label('Data Filters').classes('text-h6 mb-2')
+            with ui.row().classes('w-full justify-between items-center'):
+                ui.label('Data Filters').classes('text-h6')
+                ui.button(icon='refresh', on_click=reset_filters).classes('mt-2 text-sm p-2').props('size=sm flat')
             filter_container = ui.element('div').classes('w-full')
             filter_container.clear()
-            ui.button('Reset Filters', on_click=reset_filters).classes('mt-2')
+            
         
         # Create a grid of charts
         chart_containers = []
