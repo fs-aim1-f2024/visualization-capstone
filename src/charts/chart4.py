@@ -1,6 +1,6 @@
 from nicegui import ui
 
-def create_chart4(app_state):
+def create_chart4(app_state, **kwargs):
     """Streams Trend Over Time"""
     ui.label('Streams Trend Over Time').classes('text-h6 hidden')
     

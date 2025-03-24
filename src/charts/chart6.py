@@ -1,6 +1,6 @@
 from nicegui import ui
 
-def create_chart6(app_state):
+def create_chart6(app_state, **kwargs):
     """Distribution of Streams by Artist Count"""
     ui.label('Distribution of Streams by Artist Count').classes('text-h6 hidden')
     
