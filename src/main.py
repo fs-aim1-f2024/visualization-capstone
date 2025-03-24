@@ -237,4 +237,4 @@ def dashboard():
 
 
 # Run the app
-ui.run(title='Spotify Data Dashboard')
+ui.run(title='Spotify Data Dashboard', host='0.0.0.0', port=8080)
