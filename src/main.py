@@ -206,7 +206,7 @@ def dashboard():
                 ui.label(charts[chart_index].name).classes('text-h6')
                 ui.button(icon='close', on_click=dialog.close).props('flat')
             with ui.element('div').classes('w-full h-[calc(90vh-4rem)]'):
-                chart_functions[chart_index](app_state)
+                chart_functions[chart_index](app_state, is_full_screen=True)
         dialog.open()
 
     # Create a list of chart functions

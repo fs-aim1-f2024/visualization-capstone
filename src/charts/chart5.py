@@ -1,6 +1,6 @@
 from nicegui import ui
 
-def create_chart5(app_state):
+def create_chart5(app_state, **kwargs):
     """Correlation Matrix Heatmap"""
     ui.label('Correlation Matrix Heatmap').classes('text-h6 hidden')
     

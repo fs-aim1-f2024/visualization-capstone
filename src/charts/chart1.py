@@ -5,9 +5,8 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import KernelDensity
 
-def create_chart1(app_state):
-    """Histogram showing distribution of released years with KDE"""
-    ui.label('Distribution of Released Years').classes('text-h6 hidden')
+def create_chart1(app_state, **kwargs):
+    is_full_screen = kwargs.get('is_full_screen', False)
     
     if app_state.filtered_data is None or app_state.filtered_data.empty:
         ui.label('No data available')
@@ -47,12 +46,15 @@ def create_chart1(app_state):
         ))
         
         # Update layout
-        fig.update_layout(
-            height=400,
-            margin=dict(l=40, r=40, t=40, b=40),
+        # Adjust layout based on full screen status
+        margin_values = dict(l=40, r=40, t=40, b=40)
+        height = 600 if is_full_screen else None
+        
+        fig.update_layout( 
+            margin=margin_values,
+            height=height,
             xaxis_title='Release Year',
             yaxis_title='Probability Density',
-            title='Distribution of Track Release Years',
             showlegend=True,
             legend=dict(
                 yanchor="top",
@@ -73,7 +75,8 @@ def create_chart1(app_state):
         
         with ui.row().classes('w-full'):
             ui.plotly(fig).classes('w-3/4 h-64')
-            ui.label(stats_text).classes('w-1/4 text-sm')
+            if is_full_screen:
+                ui.label(stats_text).classes('w-1/4 text-sm')
             
     except Exception as e:
         ui.label(f'Error creating chart: {str(e)}')

@@ -1,6 +1,6 @@
 from nicegui import ui
 
-def create_chart2(app_state):
+def create_chart2(app_state, **kwargs):
     """Relationship between Released Year and Streams"""
     ui.label('Relationship between Released Year and Streams').classes('text-h6 hidden')
     

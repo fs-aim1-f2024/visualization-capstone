@@ -1,6 +1,6 @@
 from nicegui import ui
 
-def create_chart8(app_state):
+def create_chart8(app_state, **kwargs):
     """Scatter plot of danceability vs valence with cluster analysis"""
     ui.label('Danceability vs. Valence Analysis').classes('text-h6 hidden')
     
