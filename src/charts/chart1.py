@@ -74,9 +74,9 @@ def create_chart1(app_state, **kwargs):
         """
         
         with ui.row().classes('w-full'):
-            ui.plotly(fig).classes('w-3/4 h-64')
+            ui.plotly(fig).classes('w-full h-64')
             if is_full_screen:
-                ui.label(stats_text).classes('w-1/4 text-sm')
+                ui.label(stats_text).classes('w-full text-sm')
             
     except Exception as e:
         ui.label(f'Error creating chart: {str(e)}')

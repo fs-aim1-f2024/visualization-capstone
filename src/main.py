@@ -124,6 +124,7 @@ def dashboard():
         """Reset all filters"""
         app_state.filtered_data = app_state.data.copy()
         app_state.current_filters = {}
+        setup_filters()
         update_dashboard()
         ui.notify('Filters reset', type='info')
     
@@ -213,12 +214,21 @@ def dashboard():
     chart_functions = [create_chart1, create_chart2, create_chart3, create_chart4, 
                       create_chart5, create_chart6, create_chart7, create_chart8]
     
+    def popup_data():
+        """Show a dialog with the data"""
+        with ui.dialog() as dialog, ui.card().style('width: 100%; max-width: 100%'):
+            ui.label('Data').classes('text-h6')
+            ui.table.from_pandas(app_state.data, pagination=10).classes('w-full').style('width: 100vw')
+        dialog.open()
+        
     # Create the main layout
     with ui.column().classes('w-full p-1'):
         with ui.card().classes('w-full mt-1'):
             with ui.row().classes('w-full justify-between items-center'):
                 ui.label('Data Filters').classes('text-h6')
-                ui.button(icon='refresh', on_click=reset_filters).classes('p-1').props('flat')
+                with ui.row():
+                    ui.button(icon='list', text='View Data', on_click=popup_data).classes('p-1').props('flat')
+                    ui.button(icon='refresh', text='Reset Filters', on_click=reset_filters).classes('p-1').props('flat')
             filter_container = ui.element('div').classes('w-full')
             filter_container.clear()
             
