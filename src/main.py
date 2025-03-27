@@ -240,11 +240,10 @@ def dashboard():
                 with ui.card().classes('w-full cursor-pointer hover:shadow-lg transition-shadow relative') as container:
                     ui.label(charts[i].name).classes('text-h6 mb-2')
                     chart_containers.append(container)
-
-  
-    # Load data automatically when page starts
-    load_sample_data()
+    # Load data automatically when page starts 
+    load_sample_data() 
 
 
-# Run the app
-ui.run(title='Spotify Data Dashboard', host='0.0.0.0', port=8080)
+if __name__ in {"__main__", "__mp_main__"}:
+# Run the app   
+    ui.run(title='Spotify Data Dashboard', host='0.0.0.0', port=8080) 
