@@ -35,7 +35,7 @@ def create_chart1(app_state, **kwargs):
         )
 
         with ui.row().classes('w-full'):
-            ui.plotly(fig).classes('w-full h-64')
+            ui.plotly(fig).classes('w-full')
             
     except Exception as e:
         ui.label(f'Error creating chart: {str(e)}')
