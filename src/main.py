@@ -83,6 +83,9 @@ class AppState:
         # Clip date values within valid ranges
         self.data.loc[:, 'released_month'] = self.data['released_month'].clip(1, 12).astype(int)
         self.data.loc[:, 'released_day'] = self.data['released_day'].clip(1, 31).astype(int)
+        
+        # Drop streams that has no value 
+        self.data.fillna(0, inplace=True)
 
     def apply_filters(self, filters):
         """Apply filters to the data"""

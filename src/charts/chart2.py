@@ -4,8 +4,6 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from sklearn.linear_model import LinearRegression
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error, r2_score
 
 def create_chart2(app_state, **kwargs):
     """Relationship between Released Year and Streams"""
@@ -16,48 +14,46 @@ def create_chart2(app_state, **kwargs):
         return
       
     try:
+        
         # Prepare data for prediction
-        # Extract features and target
-        group_df  = app_state.filtered_data['released_year'].value_counts().reset_index()
-        X = pd.DataFrame(group_df['released_year'])
-        y = group_df['count']
-
-        # Split the data into training and testing sets
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        X = pd.DataFrame(app_state.filtered_data['released_year'], columns=['released_year'])
+        y = pd.DataFrame(app_state.filtered_data['streams'])
 
         # Train a linear regression model
         model = LinearRegression()
-        model.fit(X_train, y_train)
+        model.fit(X, y)
 
-        # Make predictions
-        y_pred = model.predict(X_test)
-
-        # Evaluate the model
-        mse = mean_squared_error(y_test, y_pred)
-        r2 = r2_score(y_test, y_pred)
-
-        print(f"Mean Squared Error: {mse:.2f}")
-        print(f"R² Score: {r2:.2f}")
+        # Get the current maximum year from the data
+        max_year = app_state.filtered_data['released_year'].max()
 
         # Create prediction line for visualization
-        years_range = np.linspace(group_df['released_year'].min(), group_df['released_year'].max() + 5, 100).reshape(-1, 1)
+        years_range = np.linspace(app_state.filtered_data['released_year'].min(), app_state.filtered_data['released_year'].max() + 5, 100).reshape(-1, 1)
         streams_pred = model.predict(years_range)
 
         # Create scatter plot of actual data
-        fig = px.scatter(group_df, x='released_year', y='count', 
-                        labels={'released_year': 'Release Year', 'count': 'Number of Streams'})
+        fig = px.scatter(app_state.filtered_data, x='released_year', y='streams', 
+                        labels={'released_year': 'Release Year', 'streams': 'Number of Streams'})
 
+        # Add shaded area for prediction region
+        fig.add_vrect(
+            x0=max_year, x1=max_year + 5,
+            fillcolor="rgba(255, 0, 0, 0.1)", opacity=0.5,
+            layer="below", line_width=0,
+            annotation_text="Prediction Area",
+            annotation_position="top right",
+        )
+        
         # Add prediction line
         fig.add_trace(
             go.Scatter(
                 x=years_range.flatten(), 
-                y=streams_pred,
+                y=streams_pred.flatten(),
                 mode='lines',
                 name='Prediction',
                 line=dict(color='red', width=2)
             )
         )
-
+        
         # Update layout
         fig.update_layout(
             xaxis_title='Release Year',
@@ -65,6 +61,11 @@ def create_chart2(app_state, **kwargs):
             legend_title='Data',
         )
         
-        ui.plotly(fig)
+        with ui.row().classes('w-full'):
+            ui.plotly(fig).classes('w-full') 
+        
+        if(kwargs.get('is_full_screen', False)):
+            print("---------------------------------------")
+            ui.label('Prediction 5 years after the latest year in the data').classes('text-h6')
     except Exception as e:
         ui.label(f'Error creating chart: {str(e)}')
