@@ -113,6 +113,7 @@ def dashboard():
             app_state.apply_filters(filters) 
         if submit:
             create_chart_panels.refresh()
+            ui.notify('Filter applied', type='info')
     
     def reset_filters():
         """Reset all filters"""
@@ -132,8 +133,14 @@ def dashboard():
     # Set the colors for the app with Spotify theme
     ui.colors(primary="#1DB954", secondary="#191414", accent="#FFFFFF", positive="#1ED760", negative="#FF5722")
     
-    with ui.header().classes('bg-gradient-to-tr from-green-600 to-green-400'):
-        with ui.card().classes('w-full'):
+    with ui.header().classes('bg-gradient-to-tr from-green-600 to-green-400') as header:
+        with ui.card().classes('w-full items-center transition-all duration-300 header-collapsed').style('display: none'):
+            with ui.row().classes('w-full justify-between items-center'):
+                with ui.row():
+                    ui.html('<svg xmlns="http://www.w3.org/2000/svg" height="30" viewBox="-33.4974 -55.829 290.3108 334.974"><path d="M177.707 98.987c-35.992-21.375-95.36-23.34-129.719-12.912-5.519 1.674-11.353-1.44-13.024-6.958-1.672-5.521 1.439-11.352 6.96-13.029 39.443-11.972 105.008-9.66 146.443 14.936 4.964 2.947 6.59 9.356 3.649 14.31-2.944 4.963-9.359 6.6-14.31 3.653m-1.178 31.658c-2.525 4.098-7.883 5.383-11.975 2.867-30.005-18.444-75.762-23.788-111.262-13.012-4.603 1.39-9.466-1.204-10.864-5.8a8.717 8.717 0 015.805-10.856c40.553-12.307 90.968-6.347 125.432 14.833 4.092 2.52 5.38 7.88 2.864 11.968m-13.663 30.404a6.954 6.954 0 01-9.569 2.316c-26.22-16.025-59.223-19.644-98.09-10.766a6.955 6.955 0 01-8.331-5.232 6.95 6.95 0 015.233-8.334c42.533-9.722 79.017-5.538 108.448 12.446a6.96 6.96 0 012.31 9.57M111.656 0C49.992 0 0 49.99 0 111.656c0 61.672 49.992 111.66 111.657 111.66 61.668 0 111.659-49.988 111.659-111.66C223.316 49.991 173.326 0 111.657 0" fill="#000000"/></svg>')
+                    ui.label('Spotify Data Dashboard').classes('text-dark text-h6') 
+            
+        with ui.card().classes('w-full items-center transition-all duration-300 header-expanded'):
             with ui.row().classes('w-full justify-between items-center'):
                 with ui.row():
                     ui.html('<svg xmlns="http://www.w3.org/2000/svg" height="30" viewBox="-33.4974 -55.829 290.3108 334.974"><path d="M177.707 98.987c-35.992-21.375-95.36-23.34-129.719-12.912-5.519 1.674-11.353-1.44-13.024-6.958-1.672-5.521 1.439-11.352 6.96-13.029 39.443-11.972 105.008-9.66 146.443 14.936 4.964 2.947 6.59 9.356 3.649 14.31-2.944 4.963-9.359 6.6-14.31 3.653m-1.178 31.658c-2.525 4.098-7.883 5.383-11.975 2.867-30.005-18.444-75.762-23.788-111.262-13.012-4.603 1.39-9.466-1.204-10.864-5.8a8.717 8.717 0 015.805-10.856c40.553-12.307 90.968-6.347 125.432 14.833 4.092 2.52 5.38 7.88 2.864 11.968m-13.663 30.404a6.954 6.954 0 01-9.569 2.316c-26.22-16.025-59.223-19.644-98.09-10.766a6.955 6.955 0 01-8.331-5.232 6.95 6.95 0 015.233-8.334c42.533-9.722 79.017-5.538 108.448 12.446a6.96 6.96 0 012.31 9.57M111.656 0C49.992 0 0 49.99 0 111.656c0 61.672 49.992 111.66 111.657 111.66 61.668 0 111.659-49.988 111.659-111.66C223.316 49.991 173.326 0 111.657 0" fill="#000000"/></svg>')
@@ -144,6 +151,10 @@ def dashboard():
             filter_container = ui.element('div').classes('w-full')
             filter_container.clear()
             
+    # Set initial state
+    header.expanded = True
+    header.collapsed = False
+    
     def load_sample_data():
         """Load sample data for demonstration"""
         sample_path = Path('data/spotify-2023.csv')
@@ -165,16 +176,7 @@ def dashboard():
         filter_container.clear()
         
         with filter_container:
-            with ui.grid().classes('grid-cols-2 md:grid-cols-4 lg:grid-cols-6'):
-                # Categorical filters
-                # categorical_columns = app_state.data.select_dtypes(include=['object']).columns.tolist()[:3]
-                # for column in categorical_columns:
-                #     values = app_state.data[column].unique().tolist()
-                #     if len(values) < 10:
-                #         ui.label(f'{column}').classes('text-sm font-medium')
-                #         dropdown = ui.select(options=values, label=column, with_input=True, multiple=True).classes('w-48')
-                #         dropdown.on('update:model-value', lambda e, col=column: apply_filter(col, e.args))
-                
+            with ui.grid().classes('grid-cols-1 md:grid-cols-3 lg:grid-cols-6'):
                 # Released Year filter
                 year_values = sorted(app_state.data['released_year'].unique().tolist())
                 year_select = ui.select(
@@ -277,8 +279,51 @@ def dashboard():
     
     # Load data automatically when page starts 
     load_sample_data()  
+    
+ # Add JavaScript to handle scroll behavior
+        # Create JavaScript functions to handle state
+    ui.add_body_html('''
+    <script>
+    window.updateHeaderState = function(isCollapsed) {
+        // This function will be called from Python
+        const expandedElements = document.querySelectorAll('.header-expanded');
+        const collapsedElements = document.querySelectorAll('.header-collapsed');
+        
+        if (isCollapsed) {
+            expandedElements.forEach(el => el.style.display = 'none');
+            collapsedElements.forEach(el => el.style.display = 'flex');
+        } else {
+            expandedElements.forEach(el => el.style.display = 'flex');
+            collapsedElements.forEach(el => el.style.display = 'none');
+        }
+    }
+    </script>
+    ''')
+    
+    # Add JavaScript to handle scroll behavior
+    ui.add_body_html('''
+    <script>
+    let lastScrollTop = 0;
+    
+    document.addEventListener('scroll', function() {
+        const header = document.querySelector('.q-header');
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        
+        // Determine scroll direction
+        const scrollingDown = scrollTop > lastScrollTop;
+        lastScrollTop = scrollTop;
+        
+        // Get the header height based on scroll position and direction
+        if (scrollTop > 10) {
+            window.updateHeaderState(true);
+        } else {
+            window.updateHeaderState(false);
+        }
+    });
+    </script>
+    ''') 
 
+if __name__ in {"__main__", "__mp_main__"}: 
 
-if __name__ in {"__main__", "__mp_main__"}:
 # Run the app   
     ui.run(title='Spotify Data Dashboard', host='0.0.0.0', port=8080) 
