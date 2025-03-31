@@ -1,10 +1,11 @@
 from nicegui import ui
 import pandas as pd
-import plotly.express as px
+import plotly.graph_objects as go
+from prophet import Prophet
 
 def create_chart4(app_state, **kwargs):
-    """Streams Trend Over Time with ML Trend Line"""
-    ui.label('Streams Trend Over Time').classes('text-h6 hidden')
+    """Streams Trend Over Time with Prophet Forecast up to 2028"""
+    ui.label('Streams Trend Over Time with Prophet Forecast').classes('text-h6 hidden')
 
     if app_state.filtered_data is None or app_state.filtered_data.empty:
         ui.label('No data available')
@@ -17,25 +18,20 @@ def create_chart4(app_state, **kwargs):
         app_state.filtered_data['released_month'] = pd.to_numeric(app_state.filtered_data['released_month'], errors='coerce')
         app_state.filtered_data['released_day'] = pd.to_numeric(app_state.filtered_data['released_day'], errors='coerce')
 
-        # Avoid chained assignment
+        # Fill missing date parts
         app_state.filtered_data.loc[:, 'released_year'].fillna(2000, inplace=True)
         app_state.filtered_data.loc[:, 'released_month'].fillna(1, inplace=True)
         app_state.filtered_data.loc[:, 'released_day'].fillna(1, inplace=True)
 
-        # Clip date values within valid ranges
+        # Clip month and day values within valid ranges
         app_state.filtered_data.loc[:, 'released_month'] = app_state.filtered_data['released_month'].clip(1, 12).astype(int)
         app_state.filtered_data.loc[:, 'released_day'] = app_state.filtered_data['released_day'].clip(1, 31).astype(int)
 
-        # Match pandas date expectations
+        # Rename columns and create a datetime column
         date_renamed = app_state.filtered_data.rename(
             columns={'released_year': 'year', 'released_month': 'month', 'released_day': 'day'}
         )
-
-        # Create a datetime column
-        date_renamed['date'] = pd.to_datetime(
-            date_renamed[['year', 'month', 'day']],
-            errors='coerce'
-        )
+        date_renamed['date'] = pd.to_datetime(date_renamed[['year', 'month', 'day']], errors='coerce')
 
         # Drop invalid dates
         date_renamed = date_renamed.dropna(subset=['date'])
@@ -43,34 +39,56 @@ def create_chart4(app_state, **kwargs):
         # Aggregate streams by date
         trend_data = date_renamed.groupby('date')['streams'].sum().reset_index()
 
-        # Apply ML-based smoothing (30-day moving average)
-        trend_data['smoothed_trend'] = trend_data['streams'].rolling(window=30, min_periods=1).mean()
+        # Prepare data for Prophet: rename columns to ds (date) and y (target)
+        prophet_data = trend_data.rename(columns={'date': 'ds', 'streams': 'y'})
 
-        # Create the line chart
-        fig = px.line(
-            trend_data,
-            x='date',
-            y=['streams', 'smoothed_trend'],
-            labels={'value': 'Streams', 'date': 'Release Date'},
-            line_shape='linear',
-            markers=True
-        )
+        # Initialize and fit the Prophet model
+        model = Prophet(yearly_seasonality=True)
+        model.fit(prophet_data)
 
-        # Improve visual readability
-        fig.update_traces(
-            selector=dict(name='streams'), line=dict(color='blue', width=2), name='Actual Streams'
-        )
-        fig.update_traces(
-            selector=dict(name='smoothed_trend'), line=dict(color='green', width=3, dash='dash'), name='Trend Line'
-        )
+        # Determine the last year in the historical data
+        last_date = prophet_data['ds'].max()
+        last_year = last_date.year
+
+        # Generate future dates: January 1st of each year from last_year+1 to 2028
+        forecast_years = [year for year in range(last_year + 1, 2029)]
+        future_dates = pd.to_datetime([f"{year}-01-01" for year in forecast_years])
+        future_df = pd.DataFrame({'ds': future_dates})
+
+        # Merge historical dates with future dates
+        full_future = pd.concat([prophet_data[['ds']], future_df], ignore_index=True)
+
+        # Generate the forecast
+        forecast = model.predict(full_future)[['ds', 'yhat']]
+
+        # Create the figure
+        fig = go.Figure()
+
+        # Add actual streams
+        fig.add_trace(go.Scatter(
+            x=prophet_data['ds'],
+            y=prophet_data['y'],
+            mode='lines',
+            name='Actual Streams',
+            line=dict(color='blue', width=1)
+        ))
+
+        # Add Prophet forecast
+        fig.add_trace(go.Scatter(
+            x=forecast['ds'],
+            y=forecast['yhat'],
+            mode='lines',
+            name='Prophet Prediction',
+            line=dict(color='red', width=1)
+        ))
 
         # Update layout
         fig.update_layout(
-            xaxis_title='Release Date',
-            yaxis_title='Total Streams',
-            xaxis=dict(showgrid=True),
-            yaxis=dict(showgrid=True),
-            hovermode='x unified'
+            title='Prophet Forecast up to 2028 (Prediction in Front)',
+            xaxis_title='Date',
+            yaxis_title='Streams',
+            hovermode='x unified',
+            legend=dict(x=0, y=1, traceorder='normal')
         )
 
         with ui.row().classes('w-full'):
