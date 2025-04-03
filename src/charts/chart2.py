@@ -27,9 +27,11 @@ def create_chart2(app_state, **kwargs):
         max_year = app_state.filtered_data['released_year'].max()
 
         # Create prediction line for visualization
-        years_range = np.linspace(app_state.filtered_data['released_year'].min(), app_state.filtered_data['released_year'].max() + 5, 100).reshape(-1, 1)
-        streams_pred = model.predict(years_range)
-
+        years_min = app_state.filtered_data['released_year'].min()
+        years_max = app_state.filtered_data['released_year'].max() + 5
+        years_range = np.linspace(years_min, years_max, 100)
+        years_df = pd.DataFrame(years_range, columns=['released_year'])
+        streams_pred = model.predict(years_df)
         # Create scatter plot of actual data
         fig = px.scatter(app_state.filtered_data, x='released_year', y='streams', 
                         labels={'released_year': 'Release Year', 'streams': 'Number of Streams'})
@@ -64,8 +66,5 @@ def create_chart2(app_state, **kwargs):
         with ui.row().classes('w-full'):
             ui.plotly(fig).classes('w-full') 
         
-        if(kwargs.get('is_full_screen', False)):
-            print("---------------------------------------")
-            ui.label('Prediction 5 years after the latest year in the data').classes('text-h6')
     except Exception as e:
         ui.label(f'Error creating chart: {str(e)}')

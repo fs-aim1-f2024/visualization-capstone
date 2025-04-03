@@ -28,7 +28,7 @@ def create_chart1(app_state, **kwargs):
             xaxis_title_font=dict(size=14),
             yaxis_title_font=dict(size=14),
             yaxis_title='Number of Tracks',
-            xaxis_title='Release Year'
+            xaxis_title='Released Year'
         )
 
         with ui.row().classes('w-full'):
