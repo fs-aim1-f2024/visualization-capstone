@@ -55,8 +55,13 @@ class AppState:
         """Load data from CSV file"""
         try:
             self.data = pd.read_csv(filepath, encoding='latin1')
+            
+            print(self.data.info())
+            
             self.preprocess_data()
             self.filtered_data = self.data.copy()
+            
+            print(self.filtered_data.head())
             return True
         except Exception as e:
             ui.notify(f"Error loading data: {e}", type='negative')
@@ -65,27 +70,30 @@ class AppState:
     def preprocess_data(self):  
         # Select numeric columns
         numeric_columns = [
-            'artist_count', 'released_year','released_month', 'released_day', 'streams', 'bpm', 'danceability_%', 
-            'valence_%', 'energy_%', 'acousticness_%', 'instrumentalness_%', 'liveness_%', 'speechiness_%',
-            'in_spotify_playlists', 'in_spotify_charts', 'in_apple_playlists','in_apple_charts',
-            'in_deezer_playlists', 'in_deezer_charts', 'in_shazam_charts', 'bpm',
+            'streams', 'in_deezer_playlists', 'in_shazam_charts'
         ]
-
+        
         # Ensure numeric columns are converted properly
         for col in numeric_columns:
             self.data[col] = pd.to_numeric(self.data[col], errors='coerce')
+            
+        print(self.data.isna().sum())
+        # Fill remaining missing values with 0
+        self.data[numeric_columns] = self.data[numeric_columns].fillna(0)
+        self.data['key'] = self.data['key'].fillna('N/A')
  
-        # Avoid chained assignment
-        self.data.loc[:, 'released_year'].fillna(2000, inplace=True)
-        self.data.loc[:, 'released_month'].fillna(1, inplace=True)
-        self.data.loc[:, 'released_day'].fillna(1, inplace=True)
-
-        # Clip date values within valid ranges
-        self.data.loc[:, 'released_month'] = self.data['released_month'].clip(1, 12).astype(int)
-        self.data.loc[:, 'released_day'] = self.data['released_day'].clip(1, 31).astype(int)
+        # Create categorical ranges for visualization
+        # Stream ranges
+        stream_bins = [0, 100000000, 500000000, 1000000000, 2000000000, 3000000000, 4000000000, 5000000000, float('inf')]
+        stream_labels = ['0-100M', '100M-500M', '500M-1B', '1B-2B', '2B-3B', '3B-4B', '4B-5B', '5B+']
+        self.data['stream_range'] = pd.cut(self.data['streams'], bins=stream_bins, labels=stream_labels, right=False)
         
-        # Drop streams that has no value 
-        self.data.fillna(0, inplace=True)
+        # Playlist ranges
+        playlist_bins = [0, 100, 500, 1000, 5000, 10000, 50000, float('inf')]
+        playlist_labels = ['0-99 playlists', '100-499 playlists', '500-999 playlists', 
+                         '1000-4999 playlists', '5000-9999 playlists', '10000-49999 playlists', '50000+ playlists']
+        self.data['playlist_range'] = pd.cut(self.data['in_spotify_playlists'], bins=playlist_bins, 
+                                           labels=playlist_labels, right=False)
 
     def apply_filters(self, filters):
         """Apply filters to the data"""
@@ -133,21 +141,22 @@ def dashboard():
             ui.aggrid.from_pandas(app_state.data, auto_size_columns=False).classes('w-full h-full')
         dialog.open()
     
+            
     # Set the colors for the app with Spotify theme
     ui.colors(primary="#1DB954", secondary="#191414", accent="#FFFFFF", positive="#1ED760", negative="#FF5722")
     
-    with ui.header().classes('bg-gradient-to-tr from-green-600 to-green-400') as header:
+    with ui.header().classes('gradient-background rounded-b-lg') as header:
         with ui.card().classes('w-full items-center transition-all duration-300 header-collapsed').style('display: none'):
             with ui.row().classes('w-full justify-between items-center'):
                 with ui.row():
                     ui.html('<svg xmlns="http://www.w3.org/2000/svg" height="30" viewBox="-33.4974 -55.829 290.3108 334.974"><path d="M177.707 98.987c-35.992-21.375-95.36-23.34-129.719-12.912-5.519 1.674-11.353-1.44-13.024-6.958-1.672-5.521 1.439-11.352 6.96-13.029 39.443-11.972 105.008-9.66 146.443 14.936 4.964 2.947 6.59 9.356 3.649 14.31-2.944 4.963-9.359 6.6-14.31 3.653m-1.178 31.658c-2.525 4.098-7.883 5.383-11.975 2.867-30.005-18.444-75.762-23.788-111.262-13.012-4.603 1.39-9.466-1.204-10.864-5.8a8.717 8.717 0 015.805-10.856c40.553-12.307 90.968-6.347 125.432 14.833 4.092 2.52 5.38 7.88 2.864 11.968m-13.663 30.404a6.954 6.954 0 01-9.569 2.316c-26.22-16.025-59.223-19.644-98.09-10.766a6.955 6.955 0 01-8.331-5.232 6.95 6.95 0 015.233-8.334c42.533-9.722 79.017-5.538 108.448 12.446a6.96 6.96 0 012.31 9.57M111.656 0C49.992 0 0 49.99 0 111.656c0 61.672 49.992 111.66 111.657 111.66 61.668 0 111.659-49.988 111.659-111.66C223.316 49.991 173.326 0 111.657 0" fill="#000000"/></svg>')
-                    ui.label('Spotify Data Dashboard').classes('text-dark text-h6') 
+                    ui.label('Spotify 2023 Data Dashboard').classes('text-dark text-h6') 
             
         with ui.card().classes('w-full items-center transition-all duration-300 header-expanded'):
             with ui.row().classes('w-full justify-between items-center'):
                 with ui.row():
                     ui.html('<svg xmlns="http://www.w3.org/2000/svg" height="30" viewBox="-33.4974 -55.829 290.3108 334.974"><path d="M177.707 98.987c-35.992-21.375-95.36-23.34-129.719-12.912-5.519 1.674-11.353-1.44-13.024-6.958-1.672-5.521 1.439-11.352 6.96-13.029 39.443-11.972 105.008-9.66 146.443 14.936 4.964 2.947 6.59 9.356 3.649 14.31-2.944 4.963-9.359 6.6-14.31 3.653m-1.178 31.658c-2.525 4.098-7.883 5.383-11.975 2.867-30.005-18.444-75.762-23.788-111.262-13.012-4.603 1.39-9.466-1.204-10.864-5.8a8.717 8.717 0 015.805-10.856c40.553-12.307 90.968-6.347 125.432 14.833 4.092 2.52 5.38 7.88 2.864 11.968m-13.663 30.404a6.954 6.954 0 01-9.569 2.316c-26.22-16.025-59.223-19.644-98.09-10.766a6.955 6.955 0 01-8.331-5.232 6.95 6.95 0 015.233-8.334c42.533-9.722 79.017-5.538 108.448 12.446a6.96 6.96 0 012.31 9.57M111.656 0C49.992 0 0 49.99 0 111.656c0 61.672 49.992 111.66 111.657 111.66 61.668 0 111.659-49.988 111.659-111.66C223.316 49.991 173.326 0 111.657 0" fill="#000000"/></svg>')
-                    ui.label('Spotify Data Dashboard').classes('text-dark text-h6')
+                    ui.label('Spotify 2023 Data Dashboard').classes('text-dark text-h6')
                 with ui.row():
                     ui.button(icon='list', text='View Data', on_click=popup_data).classes('p-1').props('flat')
                     ui.button(icon='refresh', text='Reset Filters', on_click=reset_filters).classes('p-1').props('flat')
@@ -180,6 +189,18 @@ def dashboard():
         
         with filter_container:
             with ui.grid().classes('grid-cols-1 md:grid-cols-3 lg:grid-cols-6'):
+                
+                # Track Name filter
+                # Create a list of track names for the typeahead
+                track_names = sorted(app_state.data['track_name'].unique().tolist())
+                track_name_input = ui.select(
+                    options=dict(zip(track_names, track_names)),
+                    label='Track Name',
+                    with_input=True,
+                    multiple=True,
+                    on_change=lambda e: apply_filter('track_name', e.value)
+                ).classes('w-full').props("outlined dense")
+                
                 # Released Year filter
                 year_values = sorted(app_state.data['released_year'].unique().tolist())
                 year_select = ui.select(
@@ -283,8 +304,39 @@ def dashboard():
     # Load data automatically when page starts 
     load_sample_data()  
     
+    ui.add_head_html('''
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Gidole&display=swap" rel="stylesheet">
+    ''')
+    
+    ui.add_css(''' 
+        body {
+        font-family: "Gidole", sans-serif;
+        font-weight: 400;
+        font-style: normal;
+        }
+                
+        .gradient-background {
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 5s ease infinite;
+        }
+
+        @keyframes gradient {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        } 
+               ''')
+    
  # Add JavaScript to handle scroll behavior
-        # Create JavaScript functions to handle state
     ui.add_body_html('''
     <script>
     window.updateHeaderState = function(isCollapsed) {
@@ -300,7 +352,7 @@ def dashboard():
             collapsedElements.forEach(el => el.style.display = 'none');
         }
     }
-    </script>
+    </script> 
     ''')
     
     # Add JavaScript to handle scroll behavior
@@ -325,6 +377,8 @@ def dashboard():
     });
     </script>
     ''') 
+    
+    ui.dark_mode().disable()
 
 if __name__ in {"__main__", "__mp_main__"}: 
 

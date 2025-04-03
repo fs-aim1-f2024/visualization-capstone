@@ -24,7 +24,15 @@ def create_chart3(app_state, **kwargs):
 
         # Define the playlist bins
         playlist_bins = [0, 100, 500, 1000, 5000, 10000, 50000, float('inf')]
-        playlist_labels = ['0 playlists', '1-100 playlists', '101-500 playlists', '501-1000 playlists', '1001-5000 playlists', '5001-10000 playlists', '10001+ playlists']
+        playlist_labels = [
+            '0-99 playlists', 
+            '100-499 playlists', 
+            '500-999 playlists', 
+            '1000-4999 playlists', 
+            '5000-9999 playlists', 
+            '10000-49999 playlists', 
+            '50000+ playlists'
+        ]
         
         # Categorize streams and playlists into ranges
         app_state.filtered_data['stream_range'] = pd.cut(app_state.filtered_data['streams'], bins=stream_bins, labels=stream_labels, right=False)

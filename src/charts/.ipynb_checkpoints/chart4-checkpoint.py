@@ -73,6 +73,18 @@ def create_chart4(app_state, **kwargs):
             line=dict(color='blue', width=1)
         ))
 
+        max_year = app_state.filtered_data['released_year'].max()
+        x0_date = pd.to_datetime(f"{max_year}-01-01").isoformat()
+        x1_date = pd.to_datetime(f"{max_year + 5}-01-01").isoformat()
+        
+        fig.add_vrect(
+            x0=x0_date, x1=x1_date,
+            fillcolor="rgba(255, 0, 0, 0.1)", opacity=0.5,
+            layer="below", line_width=0,
+            annotation_text="Prediction Area",
+            annotation_position="top right",
+        )
+        
         # Add Prophet forecast
         fig.add_trace(go.Scatter(
             x=forecast['ds'],
@@ -84,7 +96,6 @@ def create_chart4(app_state, **kwargs):
 
         # Update layout
         fig.update_layout(
-            title='Prophet Forecast up to 2028 (Prediction in Front)',
             xaxis_title='Date',
             yaxis_title='Streams',
             hovermode='x unified',

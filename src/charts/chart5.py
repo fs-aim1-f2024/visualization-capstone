@@ -59,7 +59,6 @@ def create_chart5(app_state, **kwargs):
 
         # Update layout
         fig.update_layout(
-            title='Correlation Matrix Heatmap',
             xaxis_title='Features',
             yaxis_title='Features',
             xaxis=dict(showgrid=False, tickangle=45),
