@@ -57,7 +57,6 @@ class AppState:
             self.data = pd.read_csv(filepath, encoding='latin1')
             
             print(self.data.info())
-            print(self.data.isna().sum())
             
             self.preprocess_data()
             self.filtered_data = self.data.copy()
@@ -71,35 +70,18 @@ class AppState:
     def preprocess_data(self):  
         # Select numeric columns
         numeric_columns = [
-            'artist_count', 'released_year', 'released_month', 'released_day', 'streams', 'bpm', 'danceability_%', 
-            'valence_%', 'energy_%', 'acousticness_%', 'instrumentalness_%', 'liveness_%', 'speechiness_%',
-            'in_spotify_playlists', 'in_spotify_charts', 'in_apple_playlists', 'in_apple_charts',
-            'in_deezer_playlists', 'in_deezer_charts', 'in_shazam_charts'
+            'streams', 'in_deezer_playlists', 'in_shazam_charts'
         ]
-
+        
         # Ensure numeric columns are converted properly
         for col in numeric_columns:
             self.data[col] = pd.to_numeric(self.data[col], errors='coerce')
- 
-        # Fill missing date parts with default values
-        self.data.loc[:, 'released_year'].fillna(2000, inplace=True)
-        self.data.loc[:, 'released_month'].fillna(1, inplace=True)
-        self.data.loc[:, 'released_day'].fillna(1, inplace=True)
-
-        # Clip date values within valid ranges
-        self.data.loc[:, 'released_month'] = self.data['released_month'].clip(1, 12).astype(int)
-        self.data.loc[:, 'released_day'] = self.data['released_day'].clip(1, 31).astype(int)
-        
-        # # Create datetime column for time series analysis
-        # self.data['date'] = pd.to_datetime(self.data[['released_year', 'released_month', 'released_day']], errors='coerce')
-        
-        # # Drop rows with invalid dates
-        # self.data = self.data.dropna(subset=['date'])
-        # print(self.data.isna().sum())
-        
+            
+        print(self.data.isna().sum())
         # Fill remaining missing values with 0
-        self.data.fillna(0, inplace=True)
-        
+        self.data[numeric_columns] = self.data[numeric_columns].fillna(0)
+        self.data['key'] = self.data['key'].fillna('N/A')
+ 
         # Create categorical ranges for visualization
         # Stream ranges
         stream_bins = [0, 100000000, 500000000, 1000000000, 2000000000, 3000000000, 4000000000, 5000000000, float('inf')]
@@ -108,8 +90,8 @@ class AppState:
         
         # Playlist ranges
         playlist_bins = [0, 100, 500, 1000, 5000, 10000, 50000, float('inf')]
-        playlist_labels = ['0 playlists', '1-100 playlists', '101-500 playlists', '501-1000 playlists', 
-                         '1001-5000 playlists', '5001-10000 playlists', '10001+ playlists']
+        playlist_labels = ['0-100 playlists', '101-500 playlists', '501-1000 playlists', 
+                         '1001-5000 playlists', '5001-10000 playlists', '10001-50000 playlists', '50001+ playlists']
         self.data['playlist_range'] = pd.cut(self.data['in_spotify_playlists'], bins=playlist_bins, 
                                            labels=playlist_labels, right=False)
 
@@ -215,6 +197,7 @@ def dashboard():
                     options=dict(zip(track_names, track_names)),
                     label='Track Name',
                     with_input=True,
+                    multiple=True,
                     on_change=lambda e: apply_filter('track_name', e.value)
                 ).classes('w-full').props("outlined dense")
                 
